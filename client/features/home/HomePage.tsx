@@ -5,6 +5,7 @@ import { APP_DISPLAY_NAME } from '../../app/config';
 import { appDetailPath } from '../../app/paths';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { apiFetch } from '../../utils/api';
+import { useAuth } from '../auth/AuthContext';
 
 type FleetApp = {
   id: string;
@@ -40,11 +41,14 @@ function formatUptime(sec: number | null): string {
 }
 
 export function HomePage() {
+  const { auth } = useAuth();
   const [apps, setApps] = useState<FleetApp[] | null>(null);
   const [host, setHost] = useState<HostSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait for AuthProvider to register the Clerk token getter (parent effect).
+    if (auth.status === 'loading') return;
     let cancelled = false;
     void (async () => {
       try {
@@ -74,7 +78,7 @@ export function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [auth.status]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

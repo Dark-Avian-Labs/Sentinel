@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router';
 
 import { GlassCard } from '../../components/ui/GlassCard';
 import { apiFetch } from '../../utils/api';
+import { useAuth } from '../auth/AuthContext';
 import { MetricSparkline } from './MetricSparkline';
 
 const RANGES = [
@@ -55,10 +56,13 @@ export function AppDetailPage() {
   const { appId = '' } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const range = searchParams.get('range') || '24h';
+  const { auth } = useAuth();
   const [data, setData] = useState<DetailPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait for AuthProvider to register the Clerk token getter (parent effect).
+    if (auth.status === 'loading') return;
     let cancelled = false;
     void (async () => {
       try {
@@ -86,7 +90,7 @@ export function AppDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [appId, range]);
+  }, [appId, range, auth.status]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
