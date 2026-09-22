@@ -61,7 +61,6 @@ export function AppDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Wait for AuthProvider to register the Clerk token getter (parent effect).
     if (auth.status === 'loading') return;
     let cancelled = false;
     void (async () => {
@@ -70,7 +69,7 @@ export function AppDetailPage() {
           `/api/fleet/${encodeURIComponent(appId)}?range=${encodeURIComponent(range)}`,
         );
         if (res.status === 401 || res.status === 403) {
-          if (!cancelled) setError('Sign in as a Sentinel admin to view this app.');
+          if (!cancelled) setError('Admin access required');
           return;
         }
         if (res.status === 404) {
@@ -93,33 +92,35 @@ export function AppDetailPage() {
   }, [appId, range, auth.status]);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <GlassCard className="p-8">
-        <Link to="/" className="text-muted text-xs tracking-[0.2em] uppercase hover:underline">
-          Fleet
-        </Link>
-        <h1 className="text-foreground mt-2 text-3xl font-semibold">
-          {data?.app.displayName ?? appId}
-        </h1>
-        <div className="mt-4 flex flex-wrap gap-2">
+    <div className="space-y-4">
+      <div className="tabs items-center">
+        <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label="App detail">
+          <Link to="/" className="tab no-underline" role="tab" aria-selected="false">
+            Fleet
+          </Link>
           {RANGES.map((item) => (
             <button
               key={item.id}
               type="button"
-              className={range === item.id ? 'header-link active' : 'header-link'}
+              className={range === item.id ? 'tab active' : 'tab'}
+              role="tab"
+              aria-selected={range === item.id}
               onClick={() => setSearchParams({ range: item.id })}
             >
               {item.label}
             </button>
           ))}
         </div>
-      </GlassCard>
+        <h1 className="text-foreground ml-auto truncate px-2 text-lg font-semibold">
+          {data?.app.displayName ?? appId}
+        </h1>
+      </div>
 
       {error ? <div className="error-msg">{error}</div> : null}
 
       {data ? (
         <>
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <MetricSparkline
               title="CPU"
               unit="%"

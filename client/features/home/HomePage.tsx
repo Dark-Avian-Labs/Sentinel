@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router';
 
-import { APP_DISPLAY_NAME } from '../../app/config';
 import { appDetailPath } from '../../app/paths';
-import { GlassCard } from '../../components/ui/GlassCard';
 import { apiFetch } from '../../utils/api';
 import { useAuth } from '../auth/AuthContext';
 
@@ -40,14 +38,18 @@ function formatUptime(sec: number | null): string {
   return `${mins}m`;
 }
 
+function isOnline(status: string | null): boolean {
+  return status === 'online';
+}
+
 export function HomePage() {
   const { auth } = useAuth();
+  const navigate = useNavigate();
   const [apps, setApps] = useState<FleetApp[] | null>(null);
   const [host, setHost] = useState<HostSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Wait for AuthProvider to register the Clerk token getter (parent effect).
     if (auth.status === 'loading') return;
     let cancelled = false;
     void (async () => {
@@ -56,7 +58,7 @@ export function HomePage() {
         if (res.status === 401 || res.status === 403) {
           if (!cancelled) {
             setApps([]);
-            setError('Sign in as a Sentinel admin to view the fleet.');
+            setError('Admin access required');
           }
           return;
         }
@@ -81,103 +83,104 @@ export function HomePage() {
   }, [auth.status]);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <GlassCard className="p-8">
-        <p className="text-muted text-xs tracking-[0.25em] uppercase">{APP_DISPLAY_NAME}</p>
-        <h1 className="text-foreground mt-2 text-3xl font-semibold">Fleet</h1>
-        <p className="text-muted mt-3 max-w-2xl text-sm leading-relaxed">
-          CPU, RAM, lag, ELU, traffic, and restart vs crash counts for PM2 apps on this host. Admin
-          access requires Clerk metadata apps.sentinel = admin.
-        </p>
-        {host ? (
-          <dl className="text-muted mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            <div>
-              Load 1m{' '}
-              <span className="text-foreground">
-                {host.load1 == null ? '-' : host.load1.toFixed(2)}
-              </span>
-            </div>
-            <div>
-              Host RAM{' '}
-              <span className="text-foreground">
-                {host.memUsedPct == null ? '-' : `${host.memUsedPct.toFixed(0)}%`}
-              </span>
-            </div>
-          </dl>
-        ) : null}
-      </GlassCard>
+    <div className="space-y-4">
+      <div className="tabs items-center">
+        <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label="Sentinel views">
+          <button type="button" className="tab active" role="tab" aria-selected="true">
+            Fleet
+          </button>
+        </div>
+        <dl className="text-muted ml-auto flex flex-wrap items-center gap-x-5 gap-y-1 px-2 text-sm">
+          <div>
+            Load{' '}
+            <span className="text-foreground font-medium">
+              {host?.load1 == null ? '-' : host.load1.toFixed(2)}
+            </span>
+          </div>
+          <div>
+            RAM{' '}
+            <span className="text-foreground font-medium">
+              {host?.memUsedPct == null ? '-' : `${host.memUsedPct.toFixed(0)}%`}
+            </span>
+          </div>
+        </dl>
+      </div>
 
       {error ? <div className="error-msg">{error}</div> : null}
 
-      {apps && apps.length === 0 && !error ? (
-        <GlassCard className="p-8">
-          <p className="text-muted text-sm">
-            No samples yet. Start the PM2 bridge on the server host, or point an in-app agent at
-            /api/ingest.
-          </p>
-        </GlassCard>
-      ) : null}
-
-      {apps && apps.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {apps.map((app) => (
-            <Link key={app.id} to={appDetailPath(app.id)} className="block no-underline">
-              <GlassCard className="p-6 transition-colors hover:border-[var(--color-glass-border-hover)]">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-foreground text-lg font-semibold">{app.displayName}</h2>
-                  <span className="text-muted text-xs uppercase">{app.status ?? 'unknown'}</span>
-                </div>
-                <dl className="text-muted mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <dt>CPU</dt>
-                    <dd className="text-foreground mt-1">
-                      {app.cpu == null ? '-' : `${app.cpu.toFixed(1)}%`}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>RSS</dt>
-                    <dd className="text-foreground mt-1">
-                      {app.rssMb == null ? '-' : `${app.rssMb.toFixed(0)} MB`}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>ELU</dt>
-                    <dd className="text-foreground mt-1">
-                      {app.elu == null ? '-' : `${(app.elu * 100).toFixed(0)}%`}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Uptime</dt>
-                    <dd className="text-foreground mt-1">{formatUptime(app.uptimeSec)}</dd>
-                  </div>
-                  <div>
-                    <dt>RPS (1h)</dt>
-                    <dd className="text-foreground mt-1">
-                      {app.reqPerSec1h == null ? '-' : app.reqPerSec1h.toFixed(2)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Errors (1h)</dt>
-                    <dd className="text-foreground mt-1">
-                      {app.errorRate1h == null ? '-' : `${(app.errorRate1h * 100).toFixed(1)}%`}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Lag p95</dt>
-                    <dd className="text-foreground mt-1">
-                      {app.lagP95Ms == null ? '-' : `${app.lagP95Ms.toFixed(1)} ms`}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>24h events</dt>
-                    <dd className="text-foreground mt-1">
-                      {app.restartCount24h} restart / {app.crashCount24h} crash
-                    </dd>
-                  </div>
-                </dl>
-              </GlassCard>
-            </Link>
-          ))}
+      {!error && apps ? (
+        <div className="table-container glass-surface">
+          <div className="table-scroll">
+            <table className="fleet-table">
+              <thead>
+                <tr>
+                  <th className="col-status" scope="col" aria-label="Status" />
+                  <th scope="col">App</th>
+                  <th scope="col">CPU</th>
+                  <th scope="col">RSS</th>
+                  <th scope="col">ELU</th>
+                  <th scope="col">Uptime</th>
+                  <th scope="col">RPS</th>
+                  <th scope="col">Errors</th>
+                  <th scope="col">Lag p95</th>
+                  <th scope="col">24h events</th>
+                </tr>
+              </thead>
+              <tbody>
+                {apps.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="text-muted py-8 text-center text-sm">
+                      No samples yet. Start the PM2 bridge on the server host, or point an in-app
+                      agent at /api/ingest.
+                    </td>
+                  </tr>
+                ) : (
+                  apps.map((app) => {
+                    const online = isOnline(app.status);
+                    return (
+                      <tr
+                        key={app.id}
+                        className="fleet-row"
+                        tabIndex={0}
+                        role="link"
+                        aria-label={`${app.displayName}, ${online ? 'online' : 'offline'}`}
+                        onClick={() => navigate(appDetailPath(app.id))}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            navigate(appDetailPath(app.id));
+                          }
+                        }}
+                      >
+                        <td className="col-status">
+                          <span
+                            className={
+                              online ? 'fleet-status-dot is-online' : 'fleet-status-dot is-offline'
+                            }
+                            title={app.status ?? 'unknown'}
+                            aria-hidden="true"
+                          />
+                        </td>
+                        <td className="text-foreground font-medium">{app.displayName}</td>
+                        <td>{app.cpu == null ? '-' : `${app.cpu.toFixed(1)}%`}</td>
+                        <td>{app.rssMb == null ? '-' : `${app.rssMb.toFixed(0)} MB`}</td>
+                        <td>{app.elu == null ? '-' : `${(app.elu * 100).toFixed(0)}%`}</td>
+                        <td>{formatUptime(app.uptimeSec)}</td>
+                        <td>{app.reqPerSec1h == null ? '-' : app.reqPerSec1h.toFixed(2)}</td>
+                        <td>
+                          {app.errorRate1h == null ? '-' : `${(app.errorRate1h * 100).toFixed(1)}%`}
+                        </td>
+                        <td>{app.lagP95Ms == null ? '-' : `${app.lagP95Ms.toFixed(1)} ms`}</td>
+                        <td>
+                          {app.restartCount24h} / {app.crashCount24h}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : null}
     </div>
