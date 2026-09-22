@@ -98,6 +98,20 @@ export function AppDetailPage() {
           <Link to="/" className="tab no-underline" role="tab" aria-selected="false">
             Fleet
           </Link>
+          <button
+            type="button"
+            className="tab active max-w-[16rem] truncate"
+            role="tab"
+            aria-selected="true"
+          >
+            {data?.app.displayName ?? appId}
+          </button>
+        </div>
+        <div
+          className="ml-auto flex min-w-0 flex-wrap justify-end gap-1"
+          role="tablist"
+          aria-label="Time range"
+        >
           {RANGES.map((item) => (
             <button
               key={item.id}
@@ -111,9 +125,6 @@ export function AppDetailPage() {
             </button>
           ))}
         </div>
-        <h1 className="text-foreground ml-auto truncate px-2 text-lg font-semibold">
-          {data?.app.displayName ?? appId}
-        </h1>
       </div>
 
       {error ? <div className="error-msg">{error}</div> : null}
