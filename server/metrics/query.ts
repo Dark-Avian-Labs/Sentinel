@@ -19,18 +19,62 @@ export type FleetAppRow = {
   errorRate1h: number | null;
 };
 
+/** Bridge polls ~10s, agent ~15s; keep room for a missed tick without stale forever. */
+const FLEET_SAMPLE_FRESH_MS = 60_000;
+
+type SampleFields = {
+  cpu: number | null;
+  rssMb: number | null;
+  lagP95Ms: number | null;
+  elu: number | null;
+  uptimeSec: number | null;
+  status: string | null;
+};
+
+/** Latest non-null per field so agent rows without status/cpu don't blank PM2 offline. */
+export function coalesceLatestSampleFields(rows: SampleFields[]): SampleFields {
+  const out: SampleFields = {
+    cpu: null,
+    rssMb: null,
+    lagP95Ms: null,
+    elu: null,
+    uptimeSec: null,
+    status: null,
+  };
+  for (const row of rows) {
+    if (out.cpu == null && row.cpu != null) out.cpu = row.cpu;
+    if (out.rssMb == null && row.rssMb != null) out.rssMb = row.rssMb;
+    if (out.lagP95Ms == null && row.lagP95Ms != null) out.lagP95Ms = row.lagP95Ms;
+    if (out.elu == null && row.elu != null) out.elu = row.elu;
+    if (out.uptimeSec == null && row.uptimeSec != null) out.uptimeSec = row.uptimeSec;
+    if (out.status == null && row.status != null) out.status = row.status;
+    if (
+      out.cpu != null &&
+      out.rssMb != null &&
+      out.lagP95Ms != null &&
+      out.elu != null &&
+      out.uptimeSec != null &&
+      out.status != null
+    ) {
+      break;
+    }
+  }
+  return out;
+}
+
 export function listFleet(db: Database.Database, now = Date.now()): FleetAppRow[] {
   const since24h = now - 24 * 60 * 60 * 1000;
   const since1h = now - 60 * 60 * 1000;
+  const sinceFresh = now - FLEET_SAMPLE_FRESH_MS;
   const apps = db
     .prepare(
       `SELECT id, display_name AS displayName, pm2_name AS pm2Name, updated_at AS updatedAt FROM apps ORDER BY display_name`,
     )
     .all() as Array<{ id: string; displayName: string; pm2Name: string | null; updatedAt: number }>;
 
-  const latestSample = db.prepare(
+  const recentSamples = db.prepare(
     `SELECT cpu, rss_mb AS rssMb, lag_p95_ms AS lagP95Ms, elu, uptime_sec AS uptimeSec, status
-     FROM samples_raw WHERE app_id = ? ORDER BY ts DESC LIMIT 1`,
+     FROM samples_raw WHERE app_id = ? AND ts >= ? ORDER BY ts DESC LIMIT 20`,
   );
   const lastEvent = db.prepare(
     `SELECT ts FROM events WHERE app_id = ? AND kind = ? ORDER BY ts DESC LIMIT 1`,
@@ -46,16 +90,8 @@ export function listFleet(db: Database.Database, now = Date.now()): FleetAppRow[
   );
 
   return apps.map((app) => {
-    const sample = latestSample.get(app.id) as
-      | {
-          cpu: number | null;
-          rssMb: number | null;
-          lagP95Ms: number | null;
-          elu: number | null;
-          uptimeSec: number | null;
-          status: string | null;
-        }
-      | undefined;
+    const rows = recentSamples.all(app.id, sinceFresh) as SampleFields[];
+    const sample = coalesceLatestSampleFields(rows);
     const lastGraceful = lastEvent.get(app.id, 'graceful') as { ts: number } | undefined;
     const lastCrash = lastEvent.get(app.id, 'crash') as { ts: number } | undefined;
     const crashes = countEvents.get(app.id, 'crash', since24h) as { c: number };
@@ -68,12 +104,12 @@ export function listFleet(db: Database.Database, now = Date.now()): FleetAppRow[
       displayName: app.displayName,
       pm2Name: app.pm2Name,
       updatedAt: app.updatedAt,
-      cpu: sample?.cpu ?? null,
-      rssMb: sample?.rssMb ?? null,
-      lagP95Ms: sample?.lagP95Ms ?? null,
-      elu: sample?.elu ?? null,
-      uptimeSec: sample?.uptimeSec ?? null,
-      status: sample?.status ?? null,
+      cpu: sample.cpu,
+      rssMb: sample.rssMb,
+      lagP95Ms: sample.lagP95Ms,
+      elu: sample.elu,
+      uptimeSec: sample.uptimeSec,
+      status: sample.status,
       lastGracefulAt: lastGraceful?.ts ?? null,
       lastCrashAt: lastCrash?.ts ?? null,
       crashCount24h: crashes.c,

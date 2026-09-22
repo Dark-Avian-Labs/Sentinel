@@ -47,7 +47,12 @@ function setEnv(appRoot, file, key, value) {
   }
 }
 
-const siblings = ['Outfitter', 'Armory', 'BudgetPlanner', 'Codex'];
+const labsSiblings = ['Outfitter', 'Armory', 'BudgetPlanner', 'Codex', 'TC-Bot'];
+const externalSiblings = [
+  path.resolve(labsRoot, '..', 'eMail Sort'),
+  path.resolve(labsRoot, '..', 'Discord Profile'),
+  path.resolve(labsRoot, '..', 'WoR Code Reminder'),
+];
 const pairs = [
   ['.env.development', 'http://127.0.0.1:3005/api/ingest'],
   ['.env.production', 'http://127.0.0.1:3005/api/ingest'],
@@ -59,14 +64,17 @@ for (const [file, ingestUrl] of pairs) {
     console.error('SENTINEL_INGEST_TOKEN missing in Sentinel', file);
     process.exit(1);
   }
-  for (const app of siblings) {
-    const root = path.join(labsRoot, app);
+  const targets = [
+    ...labsSiblings.map((app) => ({ label: app, root: path.join(labsRoot, app) })),
+    ...externalSiblings.map((root) => ({ label: path.basename(root), root })),
+  ];
+  for (const { label, root } of targets) {
     const envPath = path.join(root, file);
     if (!fs.existsSync(envPath)) continue;
     try {
       setEnv(root, file, 'SENTINEL_INGEST_URL', ingestUrl);
       setEnv(root, file, 'SENTINEL_INGEST_TOKEN', token);
-      console.log('set', app, file);
+      console.log('set', label, file);
     } catch (err) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
