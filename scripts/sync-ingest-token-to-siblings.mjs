@@ -24,6 +24,29 @@ function loadSentinelEnv(file) {
   };
 }
 
+function resolveDotenvxCli(appRoot) {
+  const candidates = [
+    path.join(appRoot, 'node_modules', '@dotenvx', 'dotenvx', 'src', 'cli', 'dotenvx.js'),
+    path.join(sentinelRoot, 'node_modules', '@dotenvx', 'dotenvx', 'src', 'cli', 'dotenvx.js'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error(`dotenvx CLI not found under ${appRoot}`);
+}
+
+function setEnv(appRoot, file, key, value) {
+  const cli = resolveDotenvxCli(appRoot);
+  const r = spawnSync(
+    process.execPath,
+    [cli, 'set', key, value, '-f', file, '--no-native', '--no-armor'],
+    { cwd: appRoot, encoding: 'utf8', windowsHide: true },
+  );
+  if (r.status !== 0) {
+    throw new Error(`${appRoot} ${file} ${key}: ${r.stderr || r.stdout || `exit ${r.status}`}`);
+  }
+}
+
 const siblings = ['Outfitter', 'Armory', 'BudgetPlanner', 'Codex'];
 const pairs = [
   ['.env.development', 'http://127.0.0.1:3005/api/ingest'],
@@ -40,20 +63,13 @@ for (const [file, ingestUrl] of pairs) {
     const root = path.join(labsRoot, app);
     const envPath = path.join(root, file);
     if (!fs.existsSync(envPath)) continue;
-    for (const [key, value] of [
-      ['SENTINEL_INGEST_URL', ingestUrl],
-      ['SENTINEL_INGEST_TOKEN', token],
-    ]) {
-      const r = spawnSync(
-        'pnpm',
-        ['exec', 'dotenvx', 'set', key, value, '-f', file, '--no-native', '--no-armor'],
-        { cwd: root, encoding: 'utf8', shell: true },
-      );
-      if (r.status !== 0) {
-        console.error(app, file, key, r.stderr || r.stdout);
-        process.exit(r.status ?? 1);
-      }
+    try {
+      setEnv(root, file, 'SENTINEL_INGEST_URL', ingestUrl);
+      setEnv(root, file, 'SENTINEL_INGEST_TOKEN', token);
+      console.log('set', app, file);
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
     }
-    console.log('set', app, file);
   }
 }
