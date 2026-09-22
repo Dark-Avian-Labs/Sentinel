@@ -5,7 +5,7 @@
   "description": "Sentinel - PM2 monitoring for Dark Avian Labs",
   "type": "module",
   "scripts": {
-    "typecheck": "pnpm run typecheck:server && pnpm run typecheck:client",
+    "typecheck": "pnpm --filter @dark-avian-labs/sentinel-agent run build && pnpm run typecheck:server && pnpm run typecheck:client",
     "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
     "typecheck:client": "tsc -p tsconfig.json --noEmit",
     "dev": "dotenvx run --strict -f .env.development -- node scripts/dev.mjs",
