@@ -1,6 +1,6 @@
 {
   "name": "Sentinel",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "private": true,
   "description": "Sentinel - PM2 monitoring for Dark Avian Labs",
   "type": "module",
