@@ -33,8 +33,8 @@ function slugifyAppId(name: string): string {
 
 function readPm2List(): Promise<Pm2Process[]> {
   return new Promise((resolve, reject) => {
-    const child = spawn('pm2', ['jlist'], {
-      shell: true,
+    // shell:false avoids DEP0190; on Windows resolve pm2.cmd via PATHEXT without a shell.
+    const child = spawn(process.platform === 'win32' ? 'pm2.cmd' : 'pm2', ['jlist'], {
       windowsHide: true,
     });
     let stdout = '';
