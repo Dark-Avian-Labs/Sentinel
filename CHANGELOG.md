@@ -8,3 +8,4 @@
 - **v1.2.1** `chore` [#6](https://github.com/Dark-Avian-Labs/Sentinel/pull/6): fix/sync ingest token script
 - **v1.2.2** `chore` [#7](https://github.com/Dark-Avian-Labs/Sentinel/pull/7): fix/fleet status agent race
 - **v1.2.3** `chore` [#8](https://github.com/Dark-Avian-Labs/Sentinel/pull/8): fix/sync ingest token env scrub
+- **v1.3.0** `chore` [#9](https://github.com/Dark-Avian-Labs/Sentinel/pull/9): feat/dal app nav
