@@ -37,10 +37,15 @@ function resolveDotenvxCli(appRoot) {
 
 function setEnv(appRoot, file, key, value) {
   const cli = resolveDotenvxCli(appRoot);
+  // dotenvx set treats an inherited process.env value as "already set" and skips
+  // writing the encrypted file — scrub Sentinel keys so the child must write.
+  const env = { ...process.env };
+  delete env.SENTINEL_INGEST_TOKEN;
+  delete env.SENTINEL_INGEST_URL;
   const r = spawnSync(
     process.execPath,
     [cli, 'set', key, value, '-f', file, '--no-native', '--no-armor'],
-    { cwd: appRoot, encoding: 'utf8', windowsHide: true },
+    { cwd: appRoot, encoding: 'utf8', windowsHide: true, env },
   );
   if (r.status !== 0) {
     throw new Error(`${appRoot} ${file} ${key}: ${r.stderr || r.stdout || `exit ${r.status}`}`);
