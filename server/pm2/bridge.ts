@@ -15,6 +15,7 @@ type Pm2Process = {
     unstable_restarts?: number;
     pm_uptime?: number;
     exit_code?: number;
+    pmx_module?: boolean;
   };
   monit?: {
     cpu?: number;
@@ -106,6 +107,7 @@ async function pollOnce(): Promise<void> {
       appId,
       displayName: name,
       pm2Name: name,
+      pmxModule: proc.pm2_env?.pmx_module === true,
       ts: now,
       cpu: typeof cpu === 'number' ? cpu : undefined,
       rssMb,

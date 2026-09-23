@@ -5,6 +5,8 @@ export type ProcessSample = {
   appId: string;
   displayName?: string;
   pm2Name?: string;
+  /** Set by the PM2 bridge from `pm2_env.pmx_module`. Ingest samples omit it. */
+  pmxModule?: boolean;
   ts?: number;
   cpu?: number;
   rssMb?: number;

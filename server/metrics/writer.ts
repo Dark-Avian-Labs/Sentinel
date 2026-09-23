@@ -18,20 +18,24 @@ function upsertApp(
   displayName: string | undefined,
   pm2Name: string | undefined,
   ts: number,
+  pmxModule?: boolean,
 ): void {
+  // null keeps an existing flag. Agent and HTTP samples omit it; a later PM2 poll sets 0 or 1.
+  const flag = pmxModule == null ? null : pmxModule ? 1 : 0;
   db.prepare(
-    `INSERT INTO apps (id, display_name, pm2_name, updated_at)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO apps (id, display_name, pm2_name, pmx_module, updated_at)
+     VALUES (?, ?, ?, COALESCE(?, 0), ?)
      ON CONFLICT(id) DO UPDATE SET
        display_name = COALESCE(excluded.display_name, apps.display_name),
        pm2_name = COALESCE(excluded.pm2_name, apps.pm2_name),
+       pmx_module = COALESCE(?, apps.pmx_module),
        updated_at = excluded.updated_at`,
-  ).run(appId, displayName || appId, pm2Name ?? null, ts);
+  ).run(appId, displayName || appId, pm2Name ?? null, flag, ts, flag);
 }
 
 export function writeProcessSample(db: Database.Database, sample: ProcessSample): void {
   const ts = sample.ts && sample.ts > 0 ? Math.floor(sample.ts) : Date.now();
-  upsertApp(db, sample.appId, sample.displayName, sample.pm2Name, ts);
+  upsertApp(db, sample.appId, sample.displayName, sample.pm2Name, ts, sample.pmxModule);
   db.prepare(
     `INSERT INTO samples_raw (
       app_id, ts, cpu, rss_mb, heap_mb, heap_total_mb, heap_external_mb,
