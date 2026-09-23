@@ -4,6 +4,7 @@ export type FleetAppRow = {
   id: string;
   displayName: string;
   pm2Name: string | null;
+  pmxModule: boolean;
   updatedAt: number;
   cpu: number | null;
   rssMb: number | null;
@@ -68,9 +69,16 @@ export function listFleet(db: Database.Database, now = Date.now()): FleetAppRow[
   const sinceFresh = now - FLEET_SAMPLE_FRESH_MS;
   const apps = db
     .prepare(
-      `SELECT id, display_name AS displayName, pm2_name AS pm2Name, updated_at AS updatedAt FROM apps ORDER BY display_name`,
+      `SELECT id, display_name AS displayName, pm2_name AS pm2Name, pmx_module AS pmxModule, updated_at AS updatedAt
+       FROM apps ORDER BY pmx_module, display_name`,
     )
-    .all() as Array<{ id: string; displayName: string; pm2Name: string | null; updatedAt: number }>;
+    .all() as Array<{
+    id: string;
+    displayName: string;
+    pm2Name: string | null;
+    pmxModule: number;
+    updatedAt: number;
+  }>;
 
   const recentSamples = db.prepare(
     `SELECT cpu, rss_mb AS rssMb, lag_p95_ms AS lagP95Ms, elu, uptime_sec AS uptimeSec, status
@@ -103,6 +111,7 @@ export function listFleet(db: Database.Database, now = Date.now()): FleetAppRow[
       id: app.id,
       displayName: app.displayName,
       pm2Name: app.pm2Name,
+      pmxModule: app.pmxModule === 1,
       updatedAt: app.updatedAt,
       cpu: sample.cpu,
       rssMb: sample.rssMb,

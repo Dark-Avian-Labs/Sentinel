@@ -12,6 +12,7 @@ export function migrateMetricsSchema(db: Database.Database): void {
       id TEXT PRIMARY KEY,
       display_name TEXT NOT NULL,
       pm2_name TEXT,
+      pmx_module INTEGER NOT NULL DEFAULT 0,
       updated_at INTEGER NOT NULL
     );
 
@@ -98,6 +99,8 @@ export function migrateMetricsSchema(db: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_host_raw_ts ON host_raw(ts);
   `);
+
+  ensureColumn(db, 'apps', 'pmx_module', 'INTEGER NOT NULL DEFAULT 0');
 
   ensureColumn(db, 'samples_raw', 'heap_total_mb', 'REAL');
   ensureColumn(db, 'samples_raw', 'heap_external_mb', 'REAL');

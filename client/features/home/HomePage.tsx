@@ -18,6 +18,7 @@ type FleetApp = {
   restartCount24h: number;
   reqPerSec1h: number | null;
   errorRate1h: number | null;
+  pmxModule: boolean;
 };
 
 type HostSnapshot = {
@@ -42,9 +43,79 @@ function isOnline(status: string | null): boolean {
   return status === 'online';
 }
 
+function FleetTable({ apps }: { apps: FleetApp[] }) {
+  const navigate = useNavigate();
+
+  return (
+    <div className="table-container glass-surface">
+      <div className="table-scroll">
+        <table className="fleet-table">
+          <thead>
+            <tr>
+              <th className="col-status" scope="col" aria-label="Status" />
+              <th scope="col">App</th>
+              <th scope="col">CPU</th>
+              <th scope="col">RSS</th>
+              <th scope="col">ELU</th>
+              <th scope="col">Uptime</th>
+              <th scope="col">RPS</th>
+              <th scope="col">Errors</th>
+              <th scope="col">Lag p95</th>
+              <th scope="col">24h events</th>
+            </tr>
+          </thead>
+          <tbody>
+            {apps.map((app) => {
+              const online = isOnline(app.status);
+              return (
+                <tr
+                  key={app.id}
+                  className="fleet-row"
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`${app.displayName}, ${online ? 'online' : 'offline'}`}
+                  onClick={() => navigate(appDetailPath(app.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigate(appDetailPath(app.id));
+                    }
+                  }}
+                >
+                  <td className="col-status">
+                    <span
+                      className={
+                        online ? 'fleet-status-dot is-online' : 'fleet-status-dot is-offline'
+                      }
+                      title={app.status ?? 'unknown'}
+                      aria-hidden="true"
+                    />
+                  </td>
+                  <td className="text-foreground font-medium">{app.displayName}</td>
+                  <td>{app.cpu == null ? '-' : `${app.cpu.toFixed(1)}%`}</td>
+                  <td>{app.rssMb == null ? '-' : `${app.rssMb.toFixed(0)} MB`}</td>
+                  <td>{app.elu == null ? '-' : `${(app.elu * 100).toFixed(0)}%`}</td>
+                  <td>{formatUptime(app.uptimeSec)}</td>
+                  <td>{app.reqPerSec1h == null ? '-' : app.reqPerSec1h.toFixed(2)}</td>
+                  <td>
+                    {app.errorRate1h == null ? '-' : `${(app.errorRate1h * 100).toFixed(1)}%`}
+                  </td>
+                  <td>{app.lagP95Ms == null ? '-' : `${app.lagP95Ms.toFixed(1)} ms`}</td>
+                  <td>
+                    {app.restartCount24h} / {app.crashCount24h}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export function HomePage() {
   const { auth } = useAuth();
-  const navigate = useNavigate();
   const [apps, setApps] = useState<FleetApp[] | null>(null);
   const [host, setHost] = useState<HostSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +153,9 @@ export function HomePage() {
     };
   }, [auth.status]);
 
+  const appRows = apps?.filter((app) => !app.pmxModule) ?? [];
+  const moduleRows = apps?.filter((app) => app.pmxModule) ?? [];
+
   return (
     <div className="space-y-4">
       <div className="tabs items-center">
@@ -109,79 +183,41 @@ export function HomePage() {
       {error ? <div className="error-msg">{error}</div> : null}
 
       {!error && apps ? (
-        <div className="table-container glass-surface">
-          <div className="table-scroll">
-            <table className="fleet-table">
-              <thead>
-                <tr>
-                  <th className="col-status" scope="col" aria-label="Status" />
-                  <th scope="col">App</th>
-                  <th scope="col">CPU</th>
-                  <th scope="col">RSS</th>
-                  <th scope="col">ELU</th>
-                  <th scope="col">Uptime</th>
-                  <th scope="col">RPS</th>
-                  <th scope="col">Errors</th>
-                  <th scope="col">Lag p95</th>
-                  <th scope="col">24h events</th>
-                </tr>
-              </thead>
-              <tbody>
-                {apps.length === 0 ? (
+        apps.length === 0 ? (
+          <div className="table-container glass-surface">
+            <div className="table-scroll">
+              <table className="fleet-table">
+                <thead>
+                  <tr>
+                    <th className="col-status" scope="col" aria-label="Status" />
+                    <th scope="col">App</th>
+                    <th scope="col">CPU</th>
+                    <th scope="col">RSS</th>
+                    <th scope="col">ELU</th>
+                    <th scope="col">Uptime</th>
+                    <th scope="col">RPS</th>
+                    <th scope="col">Errors</th>
+                    <th scope="col">Lag p95</th>
+                    <th scope="col">24h events</th>
+                  </tr>
+                </thead>
+                <tbody>
                   <tr>
                     <td colSpan={10} className="text-muted py-8 text-center text-sm">
                       No samples yet. Start the PM2 bridge on the server host, or point an in-app
                       agent at /api/ingest.
                     </td>
                   </tr>
-                ) : (
-                  apps.map((app) => {
-                    const online = isOnline(app.status);
-                    return (
-                      <tr
-                        key={app.id}
-                        className="fleet-row"
-                        tabIndex={0}
-                        role="link"
-                        aria-label={`${app.displayName}, ${online ? 'online' : 'offline'}`}
-                        onClick={() => navigate(appDetailPath(app.id))}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            navigate(appDetailPath(app.id));
-                          }
-                        }}
-                      >
-                        <td className="col-status">
-                          <span
-                            className={
-                              online ? 'fleet-status-dot is-online' : 'fleet-status-dot is-offline'
-                            }
-                            title={app.status ?? 'unknown'}
-                            aria-hidden="true"
-                          />
-                        </td>
-                        <td className="text-foreground font-medium">{app.displayName}</td>
-                        <td>{app.cpu == null ? '-' : `${app.cpu.toFixed(1)}%`}</td>
-                        <td>{app.rssMb == null ? '-' : `${app.rssMb.toFixed(0)} MB`}</td>
-                        <td>{app.elu == null ? '-' : `${(app.elu * 100).toFixed(0)}%`}</td>
-                        <td>{formatUptime(app.uptimeSec)}</td>
-                        <td>{app.reqPerSec1h == null ? '-' : app.reqPerSec1h.toFixed(2)}</td>
-                        <td>
-                          {app.errorRate1h == null ? '-' : `${(app.errorRate1h * 100).toFixed(1)}%`}
-                        </td>
-                        <td>{app.lagP95Ms == null ? '-' : `${app.lagP95Ms.toFixed(1)} ms`}</td>
-                        <td>
-                          {app.restartCount24h} / {app.crashCount24h}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            {appRows.length > 0 ? <FleetTable apps={appRows} /> : null}
+            {moduleRows.length > 0 ? <FleetTable apps={moduleRows} /> : null}
+          </>
+        )
       ) : null}
     </div>
   );

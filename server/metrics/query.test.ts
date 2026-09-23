@@ -72,6 +72,43 @@ describe('listFleet', () => {
       rssMb: 144,
       lagP95Ms: 3,
       elu: 0.05,
+      pmxModule: false,
     });
+  });
+
+  it('keeps a PM2 module flag when a later sample omits it', () => {
+    const db = getMetricsDb();
+    const now = 1_700_000_000_000;
+    writeProcessSample(db, {
+      kind: 'process',
+      appId: 'armory',
+      displayName: 'Armory',
+      pm2Name: 'Armory',
+      pmxModule: false,
+      ts: now,
+      status: 'online',
+    });
+    writeProcessSample(db, {
+      kind: 'process',
+      appId: 'pm2-logrotate',
+      displayName: 'pm2-logrotate',
+      pm2Name: 'pm2-logrotate',
+      pmxModule: true,
+      ts: now,
+      status: 'online',
+    });
+    writeProcessSample(db, {
+      kind: 'process',
+      appId: 'pm2-logrotate',
+      displayName: 'pm2-logrotate',
+      ts: now + 1_000,
+      rssMb: 40,
+    });
+
+    const fleet = listFleet(db, now + 1_000);
+    expect(fleet.map((app) => [app.id, app.pmxModule])).toEqual([
+      ['armory', false],
+      ['pm2-logrotate', true],
+    ]);
   });
 });
