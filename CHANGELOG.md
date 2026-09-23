@@ -10,3 +10,4 @@
 - **v1.2.3** `chore` [#8](https://github.com/Dark-Avian-Labs/Sentinel/pull/8): fix/sync ingest token env scrub
 - **v1.3.0** `chore` [#9](https://github.com/Dark-Avian-Labs/Sentinel/pull/9): feat/dal app nav
 - **v1.3.1** `chore` [#10](https://github.com/Dark-Avian-Labs/Sentinel/pull/10): fix/dal app nav proxy
+- **v1.3.2** `chore(deps)` [#11](https://github.com/Dark-Avian-Labs/Sentinel/pull/11): Bump @dotenvx/dotenvx in the production-dependencies group
