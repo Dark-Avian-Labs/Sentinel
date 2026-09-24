@@ -12,3 +12,4 @@
 - **v1.3.1** `chore` [#10](https://github.com/Dark-Avian-Labs/Sentinel/pull/10): fix/dal app nav proxy
 - **v1.3.2** `chore(deps)` [#11](https://github.com/Dark-Avian-Labs/Sentinel/pull/11): Bump @dotenvx/dotenvx in the production-dependencies group
 - **v1.4.0** `chore` [#13](https://github.com/Dark-Avian-Labs/Sentinel/pull/13): feat/fleet pm2 modules
+- **v1.4.1** `chore(deps)` [#16](https://github.com/Dark-Avian-Labs/Sentinel/pull/16): bump @dotenvx/dotenvx to 2.30.0 and fix ESM named import
