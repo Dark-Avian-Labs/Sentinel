@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { config as loadEnv } from '@dotenvx/dotenvx';
+import dotenvx from '@dotenvx/dotenvx';
+
+const { config: loadEnv } = dotenvx;
 
 import { isEncryptedEnvValue, normalizeClerkEnv } from './clerkEnv.js';
 
