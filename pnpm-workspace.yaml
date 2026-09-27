@@ -5,3 +5,6 @@ allowBuilds:
 
 packages:
   - 'packages/*'
+
+update:
+  githubActions: true
