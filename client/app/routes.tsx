@@ -18,11 +18,6 @@ const AppDetailPage = lazy(() =>
     default: mod.AppDetailPage,
   })),
 );
-const LegalPage = lazy(() =>
-  import('../features/legal/LegalPage').then((mod) => ({
-    default: mod.LegalPage,
-  })),
-);
 const SignInPage = lazy(() =>
   import('../features/auth/SignInPage').then((mod) => ({
     default: mod.SignInPage,
@@ -65,7 +60,6 @@ export function AppRoutes() {
                   </ProtectedRoute>
                 }
               />
-              <Route path={APP_PATHS.legal} element={<LegalPage />} />
               {/* Clerk path routing needs the wildcard for multi-step flows. */}
               <Route path={`${APP_PATHS.signIn}/*`} element={<SignInPage />} />
               <Route path={`${APP_PATHS.signUp}/*`} element={<SignUpPage />} />

@@ -1,6 +1,6 @@
 import { buildClerkProfileAppearance } from '@/clerk';
 import { useClerk } from '@clerk/react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, Outlet } from 'react-router';
 
 import feathers from '../../../assets/feathers.png';
@@ -10,11 +10,13 @@ import {
   APP_VERSION,
   CLERK_ENABLED,
   LEGAL_ENTITY_NAME,
+  LEGAL_PAGE_URL,
 } from '../../app/config';
 import { APP_PATHS } from '../../app/paths';
 import { MaterialSymbol } from '../../components/ui/MaterialSymbol';
 import { Menu } from '../../components/ui/Menu';
 import { UiStyleSelector } from '../../components/ui/UiStyleSelector';
+import { useRovingMenu } from '../../components/ui/useRovingMenu';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../features/auth/AuthContext';
 import { AsciiWaveBackground } from './AsciiWaveBackground';
@@ -32,7 +34,13 @@ function ClerkUserMenuItems({ onClose }: { onClose: () => void }) {
   if (!isLoggedIn) {
     return (
       <>
-        <Link to={APP_PATHS.signIn} className="user-menu-item" role="menuitem" onClick={onClose}>
+        <Link
+          to={APP_PATHS.signIn}
+          className="user-menu-item"
+          role="menuitem"
+          tabIndex={-1}
+          onClick={onClose}
+        >
           Sign in
         </Link>
         <div className="user-menu-divider" role="separator" />
@@ -47,6 +55,7 @@ function ClerkUserMenuItems({ onClose }: { onClose: () => void }) {
         type="button"
         className="user-menu-item text-left"
         role="menuitem"
+        tabIndex={-1}
         onClick={() => {
           onClose();
           clerk.openUserProfile({
@@ -62,6 +71,7 @@ function ClerkUserMenuItems({ onClose }: { onClose: () => void }) {
         type="button"
         className="user-menu-item text-left"
         role="menuitem"
+        tabIndex={-1}
         onClick={() => {
           onClose();
           void clerk.signOut({ redirectUrl: APP_PATHS.home });
@@ -77,26 +87,8 @@ export function Layout() {
   const { mode, toggleMode } = useTheme();
   const currentYear = new Date().getFullYear();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const { menuRef, triggerRef, onMenuKeyDown } = useRovingMenu(userMenuOpen, setUserMenuOpen);
   const userMenuId = 'sentinel-user-menu';
-
-  useEffect(() => {
-    if (!userMenuOpen) return undefined;
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setUserMenuOpen(false);
-    };
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [userMenuOpen]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -147,6 +139,7 @@ export function Layout() {
             </button>
             <div ref={menuRef} className="relative">
               <button
+                ref={triggerRef}
                 type="button"
                 className="icon-toggle-btn"
                 aria-haspopup="menu"
@@ -159,7 +152,12 @@ export function Layout() {
               </button>
               {userMenuOpen ? (
                 <Menu>
-                  <div id={userMenuId} role="menu" aria-orientation="vertical">
+                  <div
+                    id={userMenuId}
+                    role="menu"
+                    aria-orientation="vertical"
+                    onKeyDown={onMenuKeyDown}
+                  >
                     {CLERK_ENABLED ? (
                       <ClerkUserMenuItems onClose={() => setUserMenuOpen(false)} />
                     ) : (
@@ -179,9 +177,14 @@ export function Layout() {
       </main>
       <footer className="relative z-10 flex h-[50px] items-center justify-center px-6">
         <div className="mx-auto w-full max-w-[2000px] text-center">
-          <Link to={APP_PATHS.legal} className="text-muted hover:text-foreground text-sm">
+          <a
+            href={LEGAL_PAGE_URL}
+            className="text-muted hover:text-foreground text-sm"
+            target={LEGAL_PAGE_URL.startsWith('http') ? '_blank' : undefined}
+            rel={LEGAL_PAGE_URL.startsWith('http') ? 'noreferrer' : undefined}
+          >
             ©{currentYear} {LEGAL_ENTITY_NAME}
-          </Link>
+          </a>
         </div>
       </footer>
       <StaleClientUpdateBanner appVersion={APP_VERSION} />

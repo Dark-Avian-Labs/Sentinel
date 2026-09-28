@@ -9,7 +9,6 @@ export interface SearchItem {
 
 export const SCAFFOLD_SEARCH_ITEMS: SearchItem[] = [
   { id: 'home', title: 'Fleet', path: APP_PATHS.home, hint: 'Monitored apps overview' },
-  { id: 'legal', title: 'Legal', path: APP_PATHS.legal, hint: 'Legal and privacy' },
   { id: 'sign-in', title: 'Sign in', path: APP_PATHS.signIn, hint: 'Account sign-in' },
   { id: 'sign-up', title: 'Sign up', path: APP_PATHS.signUp, hint: 'Create an account' },
 ];
