@@ -43,7 +43,7 @@ function isOnline(status: string | null): boolean {
   return status === 'online';
 }
 
-function FleetTable({ apps }: { apps: FleetApp[] }) {
+function FleetTable({ apps, emptyMessage }: { apps: FleetApp[]; emptyMessage?: string }) {
   const navigate = useNavigate();
 
   return (
@@ -65,6 +65,13 @@ function FleetTable({ apps }: { apps: FleetApp[] }) {
             </tr>
           </thead>
           <tbody>
+            {apps.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="text-muted py-8 text-center text-sm">
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : null}
             {apps.map((app) => {
               const online = isOnline(app.status);
               return (
@@ -119,37 +126,56 @@ export function HomePage() {
   const [apps, setApps] = useState<FleetApp[] | null>(null);
   const [host, setHost] = useState<HostSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
   useEffect(() => {
-    if (auth.status === 'loading') return;
+    if (auth.status !== 'authenticated') return undefined;
     let cancelled = false;
-    void (async () => {
+
+    async function load(): Promise<void> {
       try {
         const res = await apiFetch('/api/fleet');
-        if (res.status === 401 || res.status === 403) {
-          if (!cancelled) {
-            setApps([]);
-            setError('Admin access required');
-          }
+        if (cancelled) return;
+        if (res.status === 401) {
+          setApps([]);
+          setError('Sign in to view the fleet.');
+          return;
+        }
+        if (res.status === 403) {
+          setApps([]);
+          setError('Admin access required.');
           return;
         }
         if (!res.ok) {
           throw new Error(`Fleet request failed (${res.status})`);
         }
         const data = (await res.json()) as { apps: FleetApp[]; host: HostSnapshot | null };
-        if (!cancelled) {
-          setError(null);
-          setApps(data.apps);
-          setHost(data.host);
-        }
+        if (cancelled) return;
+        setError(null);
+        setApps(data.apps);
+        setHost(data.host);
+        setUpdatedAt(Date.now());
       } catch (err: unknown) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load fleet');
         }
       }
-    })();
+    }
+
+    void load();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, 15_000);
+    const onWake = (): void => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    window.addEventListener('focus', onWake);
+    document.addEventListener('visibilitychange', onWake);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', onWake);
+      document.removeEventListener('visibilitychange', onWake);
     };
   }, [auth.status]);
 
@@ -159,11 +185,12 @@ export function HomePage() {
   return (
     <div className="space-y-4">
       <div className="tabs items-center">
-        <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label="Sentinel views">
-          <button type="button" className="tab active" role="tab" aria-selected="true">
-            Fleet
-          </button>
-        </div>
+        <h1 className="text-foreground px-2 text-sm font-medium">Fleet</h1>
+        {updatedAt ? (
+          <span className="text-muted text-xs">
+            Updated {new Date(updatedAt).toLocaleTimeString()}
+          </span>
+        ) : null}
         <dl className="text-muted ml-auto flex flex-wrap items-center gap-x-5 gap-y-1 px-2 text-sm">
           <div>
             Load{' '}
@@ -180,44 +207,25 @@ export function HomePage() {
         </dl>
       </div>
 
-      {error ? <div className="error-msg">{error}</div> : null}
+      {error ? (
+        <div className="error-msg" role="alert">
+          {error}
+        </div>
+      ) : null}
 
-      {!error && apps ? (
-        apps.length === 0 ? (
-          <div className="table-container glass-surface">
-            <div className="table-scroll">
-              <table className="fleet-table">
-                <thead>
-                  <tr>
-                    <th className="col-status" scope="col" aria-label="Status" />
-                    <th scope="col">App</th>
-                    <th scope="col">CPU</th>
-                    <th scope="col">RSS</th>
-                    <th scope="col">ELU</th>
-                    <th scope="col">Uptime</th>
-                    <th scope="col">RPS</th>
-                    <th scope="col">Errors</th>
-                    <th scope="col">Lag p95</th>
-                    <th scope="col">24h events</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td colSpan={10} className="text-muted py-8 text-center text-sm">
-                      No samples yet. Start the PM2 bridge on the server host, or point an in-app
-                      agent at /api/ingest.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <>
-            {appRows.length > 0 ? <FleetTable apps={appRows} /> : null}
-            {moduleRows.length > 0 ? <FleetTable apps={moduleRows} /> : null}
-          </>
-        )
+      {!error && apps === null ? <p className="text-muted text-sm">Loading fleet…</p> : null}
+
+      {!error && apps && apps.length === 0 ? (
+        <FleetTable
+          apps={[]}
+          emptyMessage="No samples yet. Start the PM2 bridge on the server host, or point an in-app agent at /api/ingest."
+        />
+      ) : null}
+      {!error && apps && apps.length > 0 ? (
+        <>
+          {appRows.length > 0 ? <FleetTable apps={appRows} /> : null}
+          {moduleRows.length > 0 ? <FleetTable apps={moduleRows} /> : null}
+        </>
       ) : null}
     </div>
   );

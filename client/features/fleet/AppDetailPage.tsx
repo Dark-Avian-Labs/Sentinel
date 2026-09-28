@@ -61,33 +61,51 @@ export function AppDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (auth.status === 'loading') return;
+    if (auth.status !== 'authenticated' || !appId) return undefined;
     let cancelled = false;
-    void (async () => {
+
+    async function load(): Promise<void> {
       try {
         const res = await apiFetch(
           `/api/fleet/${encodeURIComponent(appId)}?range=${encodeURIComponent(range)}`,
         );
-        if (res.status === 401 || res.status === 403) {
-          if (!cancelled) setError('Admin access required');
+        if (cancelled) return;
+        if (res.status === 401) {
+          setError('Sign in to view this app.');
+          return;
+        }
+        if (res.status === 403) {
+          setError('Admin access required.');
           return;
         }
         if (res.status === 404) {
-          if (!cancelled) setError('App not found.');
+          setError('App not found.');
           return;
         }
         if (!res.ok) throw new Error(`Detail request failed (${res.status})`);
         const payload = (await res.json()) as DetailPayload;
-        if (!cancelled) {
-          setError(null);
-          setData(payload);
-        }
+        if (cancelled) return;
+        setError(null);
+        setData(payload);
       } catch (err: unknown) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load app');
       }
-    })();
+    }
+
+    void load();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, 15_000);
+    const onWake = (): void => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    window.addEventListener('focus', onWake);
+    document.addEventListener('visibilitychange', onWake);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', onWake);
+      document.removeEventListener('visibilitychange', onWake);
     };
   }, [appId, range, auth.status]);
 
@@ -127,7 +145,12 @@ export function AppDetailPage() {
         </div>
       </div>
 
-      {error ? <div className="error-msg">{error}</div> : null}
+      {error ? (
+        <div className="error-msg" role="alert">
+          {error}
+        </div>
+      ) : null}
+      {!error && !data ? <p className="text-muted text-sm">Loading…</p> : null}
 
       {data ? (
         <>

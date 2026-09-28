@@ -2,7 +2,10 @@ import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router';
 
 import { Layout } from '../components/Layout/Layout';
+import { ChunkErrorBoundary } from '../components/ui/ChunkErrorBoundary';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
+import { ProtectedRoute } from '../features/auth/ProtectedRoute';
+import { NotFoundPage } from '../features/not-found/NotFoundPage';
 import { APP_PATHS } from './paths';
 
 const HomePage = lazy(() =>
@@ -42,18 +45,35 @@ function RouteFallback() {
 export function AppRoutes() {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path={APP_PATHS.home} element={<HomePage />} />
-            <Route path={APP_PATHS.appDetail} element={<AppDetailPage />} />
-            <Route path={APP_PATHS.legal} element={<LegalPage />} />
-            {/* Clerk path routing needs the wildcard for multi-step flows. */}
-            <Route path={`${APP_PATHS.signIn}/*`} element={<SignInPage />} />
-            <Route path={`${APP_PATHS.signUp}/*`} element={<SignUpPage />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <ChunkErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route
+                path={APP_PATHS.home}
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={APP_PATHS.appDetail}
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <AppDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path={APP_PATHS.legal} element={<LegalPage />} />
+              {/* Clerk path routing needs the wildcard for multi-step flows. */}
+              <Route path={`${APP_PATHS.signIn}/*`} element={<SignInPage />} />
+              <Route path={`${APP_PATHS.signUp}/*`} element={<SignUpPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
     </ErrorBoundary>
   );
 }
