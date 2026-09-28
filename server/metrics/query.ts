@@ -20,7 +20,6 @@ export type FleetAppRow = {
   errorRate1h: number | null;
 };
 
-/** Bridge polls ~10s, agent ~15s; keep room for a missed tick without stale forever. */
 const FLEET_SAMPLE_FRESH_MS = 60_000;
 
 type SampleFields = {
@@ -32,7 +31,6 @@ type SampleFields = {
   status: string | null;
 };
 
-/** Latest non-null per field so agent rows without status/cpu don't blank PM2 offline. */
 export function coalesceLatestSampleFields(rows: SampleFields[]): SampleFields {
   const out: SampleFields = {
     cpu: null,

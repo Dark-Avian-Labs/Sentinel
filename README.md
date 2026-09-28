@@ -16,13 +16,6 @@
 
 Sentinel is the home-grown PM2 monitor for Dark Avian Labs Node apps. It watches CPU, RAM, HTTP latency, event-loop lag, and restart vs crash events on the same host that runs the fleet, then charts them over Grafana-style time ranges. Alerts and error digests stay with pm2-discord; Sentinel is the dashboard you open when you want the graphs.
 
-## Gotchas
-
-- Encrypted env files need `.env.keys`. Leave `VITE_*` plaintext or Vite reads ciphertext.
-- `pnpm start` only loads `.env.production` when `NODE_ENV=production`.
-- Ingest never stores PII. Route patterns and status classes only; no IPs, user ids, query strings, or bodies.
-- Agent installs use GitHub Release tags `agent-v*`. App deploys use semantic-release `v*` and do not attach the agent tarball.
-
 ## License
 
 MIT

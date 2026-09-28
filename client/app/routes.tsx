@@ -1,8 +1,11 @@
-import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router';
+import { lazy } from 'react';
+import { createBrowserRouter, createRoutesFromElements, Route } from 'react-router';
 
+import { App } from '../App';
 import { Layout } from '../components/Layout/Layout';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
+import { ProtectedRoute } from '../features/auth/ProtectedRoute';
+import { NotFoundPage } from '../features/not-found/NotFoundPage';
 import { APP_PATHS } from './paths';
 
 const HomePage = lazy(() =>
@@ -13,11 +16,6 @@ const HomePage = lazy(() =>
 const AppDetailPage = lazy(() =>
   import('../features/fleet/AppDetailPage').then((mod) => ({
     default: mod.AppDetailPage,
-  })),
-);
-const LegalPage = lazy(() =>
-  import('../features/legal/LegalPage').then((mod) => ({
-    default: mod.LegalPage,
   })),
 );
 const SignInPage = lazy(() =>
@@ -31,29 +29,36 @@ const SignUpPage = lazy(() =>
   })),
 );
 
-function RouteFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p className="text-muted text-sm">Loading...</p>
-    </div>
-  );
-}
-
-export function AppRoutes() {
-  return (
-    <ErrorBoundary>
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path={APP_PATHS.home} element={<HomePage />} />
-            <Route path={APP_PATHS.appDetail} element={<AppDetailPage />} />
-            <Route path={APP_PATHS.legal} element={<LegalPage />} />
-            {/* Clerk path routing needs the wildcard for multi-step flows. */}
-            <Route path={`${APP_PATHS.signIn}/*`} element={<SignInPage />} />
-            <Route path={`${APP_PATHS.signUp}/*`} element={<SignUpPage />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </ErrorBoundary>
-  );
-}
+export const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route
+      element={
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      }
+    >
+      <Route element={<Layout />}>
+        <Route
+          path={APP_PATHS.home}
+          element={
+            <ProtectedRoute requireAdmin>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={APP_PATHS.appDetail}
+          element={
+            <ProtectedRoute requireAdmin>
+              <AppDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path={`${APP_PATHS.signIn}/*`} element={<SignInPage />} />
+        <Route path={`${APP_PATHS.signUp}/*`} element={<SignUpPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Route>,
+  ),
+);

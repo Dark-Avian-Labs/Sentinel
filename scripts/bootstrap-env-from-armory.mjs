@@ -1,8 +1,3 @@
-/**
- * One-shot: rebuild Sentinel .env.development / .env.production from Armory
- * Clerk keys + Sentinel identity. Writes plaintext then encrypts secrets.
- * Run from Sentinel: node scripts/bootstrap-env-from-armory.mjs
- */
 import { spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
