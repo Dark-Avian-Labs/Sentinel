@@ -1,7 +1,3 @@
-/**
- * Copy SENTINEL_INGEST_* from Sentinel into sibling app env files.
- * Usage: node scripts/sync-ingest-token-to-siblings.mjs
- */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';

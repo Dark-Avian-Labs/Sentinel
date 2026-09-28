@@ -34,7 +34,6 @@ function slugifyAppId(name: string): string {
 
 function readPm2List(): Promise<Pm2Process[]> {
   return new Promise((resolve, reject) => {
-    // shell:false avoids DEP0190; on Windows resolve pm2.cmd via PATHEXT without a shell.
     const child = spawn(process.platform === 'win32' ? 'pm2.cmd' : 'pm2', ['jlist'], {
       windowsHide: true,
     });
@@ -150,7 +149,7 @@ export function startPm2Bridge(intervalMs = 10_000): Pm2BridgeHandle {
       try {
         writeHostSnapshot(Date.now());
       } catch {
-        // Host snapshot is best-effort when PM2 is down.
+        // ignore
       }
     });
   };

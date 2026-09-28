@@ -163,7 +163,7 @@ export function createSentinelAgent(options: SentinelAgentOptions): {
         source: 'agent',
       },
     ]).catch(() => {
-      // Best-effort on shutdown.
+      // ignore
     });
   };
 
@@ -198,7 +198,7 @@ export function createSentinelAgent(options: SentinelAgentOptions): {
       if (timer || stopped) return;
       timer = setInterval(() => {
         void flush().catch(() => {
-          // Drop failed flush; next interval retries.
+          // ignore
         });
       }, flushIntervalMs);
     },
