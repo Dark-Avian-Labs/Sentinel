@@ -35,7 +35,6 @@ agent.start();
 
 process.on('SIGTERM', () => {
   agent.noteGracefulExit('SIGTERM');
-  // then your existing shutdown
 });
 process.on('uncaughtException', (err) => {
   agent.noteCrash(err);
