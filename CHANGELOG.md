@@ -16,3 +16,4 @@
 - **v1.4.2** `chore(deps)` [#17](https://github.com/Dark-Avian-Labs/Sentinel/pull/17): Bump the production-dependencies group across 1 directory with 2 updates
 - **v1.4.3** `chore` [#21](https://github.com/Dark-Avian-Labs/Sentinel/pull/21): fix/platform audit shell
 - **v1.4.4** `chore(deps)` [#22](https://github.com/Dark-Avian-Labs/Sentinel/pull/22): Bump the production-dependencies group with 2 updates
+- **v1.4.5** `chore` [#23](https://github.com/Dark-Avian-Labs/Sentinel/pull/23): chore/dependency bumps
