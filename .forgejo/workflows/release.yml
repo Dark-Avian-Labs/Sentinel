@@ -1,11 +1,5 @@
 name: Agent Release
 
-permissions:
-  contents: read
-
-env:
-  NODE_VERSION: 26
-
 on:
   release:
     types: [published]
@@ -16,12 +10,12 @@ on:
         required: true
         type: string
       prerelease:
-        description: Mark the GitHub release as a pre-release
+        description: Mark the release as a pre-release
         required: false
         type: boolean
         default: false
       draft:
-        description: Create the GitHub release as a draft
+        description: Create the release as a draft
         required: false
         type: boolean
         default: false
@@ -33,10 +27,8 @@ concurrency:
 jobs:
   pack-and-upload:
     if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'agent-v') }}
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: build-node26
     timeout-minutes: 15
-    permissions:
-      contents: write
 
     steps:
       - name: Resolve agent version
@@ -63,17 +55,16 @@ jobs:
           echo "Resolved agent-v$version"
 
       - name: Checkout
-        uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1.8.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
           fetch-depth: 0
 
-      - name: Setup pnpm and Node.js
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
-        with:
-          runtime: node@${{ env.NODE_VERSION }}
-          cache: true
-          require-lockfile: true
+      - name: Enable pnpm
+        run: npm install -g pnpm@12.6.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Set agent package version
         working-directory: packages/agent
@@ -103,7 +94,7 @@ jobs:
           test -f "$dest"
           ls -la ../../dist-agent
 
-      - name: Publish GitHub release asset
+      - name: Publish release asset
         uses: iShark5060/actions-gh-release@b06573c56adbc4d16a5e68b694bd58cd3da7149b # v1.2.1
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
@@ -117,7 +108,7 @@ jobs:
             Install in sibling apps:
 
             ```json
-            "@dark-avian-labs/sentinel-agent": "https://github.com/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/${{ steps.meta.outputs.asset }}"
+            "@dark-avian-labs/sentinel-agent": "${{ github.server_url }}/${{ github.repository }}/releases/download/${{ steps.meta.outputs.tag }}/${{ steps.meta.outputs.asset }}"
             ```
 
             This release does not include the Sentinel dashboard app.
@@ -126,7 +117,7 @@ jobs:
           upload_checksums: true
 
   discord-status:
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: build-node26
     timeout-minutes: 10
     needs: [pack-and-upload]
     if: ${{ always() && (github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'agent-v')) }}
