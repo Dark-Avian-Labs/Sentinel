@@ -8,4 +8,4 @@ PM2 monitor for DAL Node apps on one host. Alerts and logs stay with `pm2-discor
 
 Ingest and the agent must not send IPs, user ids, emails, cookies, Authorization headers, bodies, full URLs, or query strings. HTTP dimensions are method, route pattern, status class, and latency buckets.
 
-The in-app agent publishes as a GitHub Release tagged `agent-v*`. App releases are semantic-release `v*` and do not include the agent tarball. Sibling apps install from that tarball, or from `file:../Sentinel/packages/agent` while iterating.
+The in-app agent publishes as a Forgejo release tagged `agent-v*`. App releases are semantic-release `v*` and do not include the agent tarball. Sibling apps install from that tarball, or from `file:../Sentinel/packages/agent` while iterating.
