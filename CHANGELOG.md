@@ -17,3 +17,4 @@
 - **v1.4.3** `chore` [#21](https://github.com/Dark-Avian-Labs/Sentinel/pull/21): fix/platform audit shell
 - **v1.4.4** `chore(deps)` [#22](https://github.com/Dark-Avian-Labs/Sentinel/pull/22): Bump the production-dependencies group with 2 updates
 - **v1.4.5** `chore` [#23](https://github.com/Dark-Avian-Labs/Sentinel/pull/23): chore/dependency bumps
+- **v1.4.6** `chore`: Merge pull request 'ci: run checks on Forgejo' (#24) from ci/forgejo-workflows into main
