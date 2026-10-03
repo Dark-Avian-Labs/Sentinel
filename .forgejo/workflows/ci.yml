@@ -20,7 +20,6 @@ on:
       - 'scripts/**'
       - 'e2e/**'
       - 'playwright.config.ts'
-      - 'favicon.ico'
       - '.env.production'
       - '.releaserc.json'
       - '.forgejo/workflows/ci.yml'
@@ -297,7 +296,9 @@ jobs:
           cp packages/agent/package.json /tmp/deploy/packages/agent/
           cp -r packages/agent/dist /tmp/deploy/packages/agent/
           if [ -f .env.production ]; then cp .env.production /tmp/deploy/; fi
-          if [ -f favicon.ico ]; then cp favicon.ico /tmp/deploy/; fi
+          mkdir -p /tmp/deploy/public
+          cp public/favicon.svg /tmp/deploy/public/favicon.svg
+          cp public/favicon.png /tmp/deploy/public/favicon.png
           if [ -d public ]; then cp -r public /tmp/deploy/; fi
           printf 'DOTENV_PRIVATE_KEY_PRODUCTION=%s\n' "$DOTENV_PRIVATE_KEY_PRODUCTION" > /tmp/deploy/.env.keys
           chmod 600 /tmp/deploy/.env.keys
