@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 0
 
       - name: Enable pnpm
-        run: npm install -g pnpm@12.6.0
+        run: npm install -g pnpm@$(node -p 'require("./package.json").packageManager.replace(/^pnpm@/, "")')
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
