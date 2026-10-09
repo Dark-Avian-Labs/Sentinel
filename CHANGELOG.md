@@ -21,3 +21,4 @@
 - **v1.5.0** `chore`: Merge pull request 'Replace the header feather and the soft wordmark glow' (#30) from feat/header-mark into main
 - **v1.5.1** `chore`: Merge pull request 'Stop serving a leftover client build in development' (#31) from fix/client-serving into main
 - **v1.5.2** `chore`: Merge pull request 'chore(deps): update dependencies to latest' (#32) from chore/deps-latest into main
+- **v1.5.3** `chore`: Merge pull request 'chore(deps): update production dependencies' (#33) from deps/production into main
