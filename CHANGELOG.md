@@ -23,3 +23,4 @@
 - **v1.5.2** `chore`: Merge pull request 'chore(deps): update dependencies to latest' (#32) from chore/deps-latest into main
 - **v1.5.3** `chore`: Merge pull request 'chore(deps): update production dependencies' (#33) from deps/production into main
 - **v1.5.4** `chore`: Merge pull request 'ci: rebuild dependency pull requests from an @actions rebase comment' (#35) from ci/actions-rebase into main
+- **v1.5.5** `chore`: Merge pull request 'ci: rebase dependency pull requests as Sayori' (#36) from ci/sayori-rebase into main
